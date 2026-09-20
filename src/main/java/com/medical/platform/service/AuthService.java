@@ -3,7 +3,12 @@ package com.medical.platform.service;
 import com.medical.platform.dto.AuthResponse;
 import com.medical.platform.dto.LoginRequest;
 import com.medical.platform.dto.RegisterRequest;
+import com.medical.platform.entity.Doctor;
+import com.medical.platform.entity.Patient;
+import com.medical.platform.entity.Role;
 import com.medical.platform.entity.User;
+import com.medical.platform.repository.DoctorRepository;
+import com.medical.platform.repository.PatientRepository;
 import com.medical.platform.repository.UserRepository;
 import com.medical.platform.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +22,8 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -36,6 +43,16 @@ public class AuthService {
         user.setEnabled(true);
 
         userRepository.save(user);
+
+        if (request.getRole() == Role.PATIENT) {
+            Patient patient = new Patient();
+            patient.setUser(user);
+            patientRepository.save(patient);
+        } else if (request.getRole() == Role.DOCTOR) {
+            Doctor doctor = new Doctor();
+            doctor.setUser(user);
+            doctorRepository.save(doctor);
+        }
 
         String token = jwtService.generateToken(user);
         return new AuthResponse(token);
