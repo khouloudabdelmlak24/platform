@@ -7,7 +7,6 @@ import com.medical.platform.entity.User;
 import com.medical.platform.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 @Service
@@ -26,6 +25,12 @@ public class PatientService {
     public PatientResponse getPatientById(Long id) {
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Patient non trouvé avec l'id : " + id));
+        return toResponse(patient);
+    }
+
+    public PatientResponse getPatientByEmail(String email) {
+        Patient patient = patientRepository.findByUserEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Patient non trouvé pour l'email : " + email));
         return toResponse(patient);
     }
 

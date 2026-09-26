@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -20,6 +21,11 @@ public class PatientController {
     @GetMapping
     public ResponseEntity<List<PatientResponse>> getAllPatients() {
         return ResponseEntity.ok(patientService.getAllPatients());
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<PatientResponse> getMyProfile(Principal principal) {
+        return ResponseEntity.ok(patientService.getPatientByEmail(principal.getName()));
     }
 
     @GetMapping("/{id}")
