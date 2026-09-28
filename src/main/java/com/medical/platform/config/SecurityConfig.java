@@ -8,9 +8,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import java.util.List;
 
 @Configuration
@@ -31,19 +32,29 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
 
+    // ---------------------------------------------------------------
+    // Chaîne de sécurité : qui a le droit d'accéder à quoi
+    // ---------------------------------------------------------------
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
+                        // Routes publiques
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+
+                        // Règles spécifiques : elles doivent TOUJOURS être avant les règles générales
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/patients/me").hasAnyRole("DOCTOR", "PATIENT")
                         .requestMatchers("/api/patients/*/measurements/**").hasAnyRole("DOCTOR", "PATIENT")
+
+                        // Règles générales
                         .requestMatchers("/api/doctor/**", "/api/patients/**").hasRole("DOCTOR")
                         .requestMatchers("/api/patient/**").hasRole("PATIENT")
+
+                        // Tout le reste nécessite d'être connecté
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -55,10 +66,13 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // ---------------------------------------------------------------
+    // CORS : autorise le frontend Angular (quel que soit son port en local)
+    // ---------------------------------------------------------------
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200", "http://localhost:62565"));
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -68,6 +82,9 @@ public class SecurityConfig {
         return source;
     }
 
+    // ---------------------------------------------------------------
+    // Authentification par email + mot de passe (BCrypt)
+    // ---------------------------------------------------------------
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
@@ -84,5 +101,4 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
 }
