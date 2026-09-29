@@ -6,6 +6,7 @@ import com.medical.platform.entity.Patient;
 import com.medical.platform.entity.VitalMeasurement;
 import com.medical.platform.repository.PatientRepository;
 import com.medical.platform.repository.VitalMeasurementRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ public class MeasurementService {
 
     private final VitalMeasurementRepository measurementRepository;
     private final PatientRepository patientRepository;
+    private final AuditService auditService;
 
     public List<MeasurementResponse> getMeasurementsForPatient(Long patientId) {
         return measurementRepository.findByPatientIdOrderByMeasurementDateDesc(patientId)
@@ -25,7 +27,7 @@ public class MeasurementService {
                 .toList();
     }
 
-    public MeasurementResponse addMeasurement(Long patientId, MeasurementRequest request) {
+    public MeasurementResponse addMeasurement(Long patientId, MeasurementRequest request, HttpServletRequest httpRequest) {
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new IllegalArgumentException("Patient non trouvé avec l'id : " + patientId));
 
@@ -39,6 +41,15 @@ public class MeasurementService {
         measurement.setHeight(request.getHeight());
 
         measurementRepository.save(measurement);
+
+        auditService.log(
+                patient.getUser(),
+                "ADD_MEASUREMENT",
+                "VitalMeasurement",
+                "Nouvelle mesure ajoutée pour le patient id " + patientId,
+                httpRequest
+        );
+
         return toResponse(measurement);
     }
 

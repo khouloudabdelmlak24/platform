@@ -3,6 +3,7 @@ package com.medical.platform.controller;
 import com.medical.platform.dto.MeasurementRequest;
 import com.medical.platform.dto.MeasurementResponse;
 import com.medical.platform.service.MeasurementService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,8 +26,9 @@ public class MeasurementController {
     @PostMapping
     public ResponseEntity<MeasurementResponse> addMeasurement(
             @PathVariable Long patientId,
-            @Valid @RequestBody MeasurementRequest request
+            @Valid @RequestBody MeasurementRequest request,
+            HttpServletRequest httpRequest
     ) {
-        return ResponseEntity.ok(measurementService.addMeasurement(patientId, request));
+        return ResponseEntity.ok(measurementService.addMeasurement(patientId, request, httpRequest));
     }
 }

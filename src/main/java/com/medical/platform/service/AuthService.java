@@ -11,6 +11,7 @@ import com.medical.platform.repository.DoctorRepository;
 import com.medical.platform.repository.PatientRepository;
 import com.medical.platform.repository.UserRepository;
 import com.medical.platform.security.JwtService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,8 +28,9 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final AuditService auditService;
 
-    public AuthResponse register(RegisterRequest request) {
+    public AuthResponse register(RegisterRequest request, HttpServletRequest httpRequest) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Un compte existe déjà avec cet email");
         }
@@ -54,11 +56,13 @@ public class AuthService {
             doctorRepository.save(doctor);
         }
 
+        auditService.log(user, "REGISTER", "User", "Inscription réussie (rôle : " + request.getRole() + ")", httpRequest);
+
         String token = jwtService.generateToken(user);
         return new AuthResponse(token);
     }
 
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponse login(LoginRequest request, HttpServletRequest httpRequest) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
@@ -68,6 +72,8 @@ public class AuthService {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
+
+        auditService.log(user, "LOGIN", "User", "Connexion réussie", httpRequest);
 
         String token = jwtService.generateToken(user);
         return new AuthResponse(token);
