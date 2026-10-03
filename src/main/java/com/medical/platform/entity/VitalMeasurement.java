@@ -44,6 +44,13 @@ public class VitalMeasurement {
 
     private Double bmi;
 
+    private String riskLevel;
+
+    private Integer riskScore;
+
+    @Column(columnDefinition = "TEXT")
+    private String riskFactors;
+
     @Column(nullable = false)
     private LocalDateTime measurementDate;
 

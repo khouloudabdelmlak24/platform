@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,16 +20,20 @@ public class MeasurementController {
     private final MeasurementService measurementService;
 
     @GetMapping
-    public ResponseEntity<List<MeasurementResponse>> getMeasurements(@PathVariable Long patientId) {
-        return ResponseEntity.ok(measurementService.getMeasurementsForPatient(patientId));
+    public ResponseEntity<List<MeasurementResponse>> getMeasurements(
+            @PathVariable Long patientId,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(measurementService.getMeasurementsForPatient(patientId, authentication));
     }
 
     @PostMapping
     public ResponseEntity<MeasurementResponse> addMeasurement(
             @PathVariable Long patientId,
             @Valid @RequestBody MeasurementRequest request,
-            HttpServletRequest httpRequest
+            HttpServletRequest httpRequest,
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(measurementService.addMeasurement(patientId, request, httpRequest));
+        return ResponseEntity.ok(measurementService.addMeasurement(patientId, request, httpRequest, authentication));
     }
 }
